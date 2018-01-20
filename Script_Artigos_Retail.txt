@@ -1,7 +1,7 @@
 */ -----------------------------------------------------------------------
 */ oleAppExcel > Objecto Excel que vai ser invocado para ler o ficheiro
 */ -----------------------------------------------------------------------
-*/ Set point to "." */ definir . como separadaor decimal
+*/ Set point to "." */ definir . como separador decimal
 
 */ -----------------------------------------------------------------------
 */ Criar um cursor vazio igual a estrutura da tabela de artigos
