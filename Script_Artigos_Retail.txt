@@ -1,0 +1,206 @@
+*/ -----------------------------------------------------------------------
+*/ oleAppExcel > Objecto Excel que vai ser invocado para ler o ficheiro
+*/ -----------------------------------------------------------------------
+*/ Set point to "." */ definir . como separadaor decimal
+
+*/ -----------------------------------------------------------------------
+*/ Criar um cursor vazio igual a estrutura da tabela de artigos
+*/ -----------------------------------------------------------------
+IF USED("DadosExcel")
+	USE IN DadosExcel
+ENDIF
+SELECT * FROM Artigos WHERE .F. INTO CURSOR DadosExcel READWRITE  
+
+nLin=0
+SELECT DadosExcel 
+DO WHILE .T.
+	
+	nLin=nLin+1
+    
+    APPEND BLANK
+	*/ Codigo do artigo = Ref_
+	IF TYPE("oleAppExcel.Application.Cells(nLin,1).value")=="C"
+		Replace Codigo WITH oleAppExcel.Application.Cells(nLin,1).value
+	ELSE
+		IF TYPE("oleAppExcel.Application.Cells(nLin,1).value")=="N"
+			Replace Codigo WITH ALLTRIM(STR(oleAppExcel.Application.Cells(nLin,1).value,15))
+		ENDIF
+	ENDIF
+	
+    */ Wait Windows "Artigo do Excel: "+Codigo Nowait 
+
+	*/ Descrição do artigo = Produto
+	IF TYPE("oleAppExcel.Application.Cells(nLin,2).value")=="C"	
+		Replace Descricao WITH oleAppExcel.Application.Cells(nLin,2).value
+	ENDIF	
+	
+	*/ Unidade
+	IF TYPE("oleAppExcel.Application.Cells(nLin,17).value")=="C"	
+		Replace Unibase WITH oleAppExcel.Application.Cells(nLin,17).value
+	ENDIF
+	
+	*/ iva
+	cIvaRetail="TAXA NORMAL"
+    nIva=23
+    IF TYPE("oleAppExcel.Application.Cells(nLin,19).value")=="C"
+	    cIvaRetail=oleAppExcel.Application.Cells(nLin,19).value
+    ENDIF
+    Do case 
+	   Case	Upper(cIVARetail)="ISENTO"
+            nIva=1
+	   Case	Upper(cIVARetail)="TAXA NORMAL"
+            nIva=23
+	   Case Upper(cIVARetail)="TAXA INTERMÉDIA"
+            nIva=13
+	   Case Upper(cIVARetail)="TAXA REDUZIDA"
+            nIva=6
+	Endcase
+	Replace iva with nIva
+
+
+	*/ iva cOMPRA
+	cIvaRetail="TAXA NORMAL"
+    nIvac=23
+    IF TYPE("oleAppExcel.Application.Cells(nLin,19).value")=="C"
+	    cIvaRetail=oleAppExcel.Application.Cells(nLin,19).value
+    ENDIF
+  
+    Do case 
+	   Case	Upper(cIVARetail)="ISENTO"
+            nIvac=1
+	   Case	Upper(cIVARetail)="TAXA NORMAL"
+            nIvac=23
+	   Case Upper(cIVARetail)="TAXA INTERMÉDIA"
+            nIvac=13
+	   Case Upper(cIVARetail)="TAXA REDUZIDA"
+            nIvac=6
+	Endcase
+	Replace ivac with nIvac
+
+	
+	*/ Preco1 s/iva
+	IF TYPE("oleAppExcel.Application.Cells(nLin,7).value")=="N"
+		Replace pvp1 WITH oleAppExcel.Application.Cells(nLin,7).value
+	ENDIF
+	
+	*/ Preco2 s/iva
+	IF TYPE("oleAppExcel.Application.Cells(nLin,9).value")=="N"
+		Replace pvp2 WITH oleAppExcel.Application.Cells(nLin,9).value
+	ENDIF
+	
+	*/ Preco3 s/iva
+	IF TYPE("oleAppExcel.Application.Cells(nLin,11).value")=="N"
+		Replace pvp3 WITH oleAppExcel.Application.Cells(nLin,11).value
+	ENDIF
+	
+	*/ Preco1 c/iva
+	IF TYPE("oleAppExcel.Application.Cells(nLin,8).value")=="N"
+		Replace pvpiva1 WITH oleAppExcel.Application.Cells(nLin,8).value
+	ENDIF
+	
+	*/ Preco2 c/iva
+	IF TYPE("oleAppExcel.Application.Cells(nLin,10).value")=="N"
+		Replace pvpiva2 WITH oleAppExcel.Application.Cells(nLin,10).value
+	ENDIF
+	
+	*/ Preco3 s/iva
+	IF TYPE("oleAppExcel.Application.Cells(nLin,12).value")=="N"
+		Replace pvpiva3 WITH oleAppExcel.Application.Cells(nLin,12).value
+	ENDIF
+	
+	
+	*/ Grupo
+	IF TYPE("oleAppExcel.Application.Cells(nLin,34).value")=="C"	
+		Replace grupo WITH oleAppExcel.Application.Cells(nLin,34).value
+	ELSE
+		IF TYPE("oleAppExcel.Application.Cells(nLin,34).value")=="N"		
+			Replace grupo WITH ALLTRIM(STR(oleAppExcel.Application.Cells(nLin,34).value))
+		ENDIF
+	ENDIF 
+	
+	
+	*/ ------------------------------------------------------------------
+	*/ Se o codigo estiver vazio então chegou ao fim do ficheiro excel
+	*/ Sair do processo de leitura
+	*/ ------------------------------------------------------------------
+	If EMPTY(Codigo)
+		EXIT
+	ENDIF
+ENDDO 			
+
+SELECT DadosExcel
+GO TOP 
+IF EOF() 
+	MESSAGEBOX("Sem dados importados",0+48,"Sistema")
+	USE IN DadosExcel	
+	RETURN 
+ENDIF
+
+*/ ------------------------------------------
+*/ Mostrar os dados importados
+*/ ------------------------------------------
+BROWSE 
+*/ ------------------------------------------
+
+IF MESSAGEBOX("Inserir os dados na tabela de artigos?",4+32+256,"Sistema")=7
+	*/ Não
+	USE IN DadosExcel	
+	RETURN 
+ENDIF 
+
+IF USED("CurArtigosExcel")
+	USE IN CurArtigosExcel
+ENDIF
+USE Artigos IN 0 ALIAS CurArtigosExcel ORDER Codigo SHARED AGAIN
+
+SELECT DadosExcel
+GO TOP
+SCAN ALL FOR !EMPTY(Codigo)
+
+	STORE Codigo TO cCodigoArt
+
+	*/ Guardar em variáveis de memória os valores da linha atual da tabela DadosExcel 
+	SCATTER MEMO MEMVAR
+	
+	Wait Windows "A inserir artigo: "+cCodigoArt Nowait
+
+    */ ---------------------------------------
+	*/ Procurar na tabela de artigos o codigo
+	*/ que está no excel
+	*/ ---------------------------------------
+	SELECT CurArtigosExcel
+	SEEK UPPER(cCodigoArt)
+	
+	IF !FOUND()
+		*/ Codigo do artigo não existe
+		*/ Vamos criar uma nova linha em branco na tabela de artigos
+		*/ onde se vai inserir os dados
+		APPEND BLANK
+	ELSE
+		*/ Se o artigo já existe, vamos atualizar
+		*/ com os dados existentes no excel
+	ENDIF
+	
+	*/ ------------------------------------------------------------------------------------------------------
+	*/ Inserir na linha da tabela ss os dados guardados em variaveis de memoria criadas pelo comando SCATTER
+	*/ ------------------------------------------------------------------------------------------------------
+	GATHER MEMVAR MEMO
+	Replace Tipo with "A"
+	Replace Componente with 1
+	Replace Envia_Touch with .T.
+	Replace Pede_PVP with 1
+	Replace Quant_Defa with 1
+	
+
+	SELECT DadosExcel
+ENDSCAN 
+
+*/ ----------------------------------------
+*/ Importação terminada
+*/ ----------------------------------------
+USE IN CurArtigosExcel
+USE IN DadosExcel
+
+Wait Windows "Terminou"
+
+RETURN 

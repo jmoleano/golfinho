@@ -1,0 +1,204 @@
+*/ -----------------------------------------------------------------------
+*/ oleAppExcel > Objecto Excel que vai ser invocado para ler o ficheiro
+*/ -----------------------------------------------------------------------
+*/ Set point to "." */ definir . como separadaor decimal
+
+*/ -----------------------------------------------------------------------
+*/ Criar um cursor vazio igual a estrutura da tabela de artigos
+*/ -----------------------------------------------------------------
+IF USED("DadosExcel")
+	USE IN DadosExcel
+ENDIF
+SELECT * FROM Clientes WHERE .F. INTO CURSOR DadosExcel READWRITE  
+
+nLin=0
+SELECT DadosExcel 
+DO WHILE .T.
+	
+	nLin=nLin+1
+    
+    APPEND BLANK
+	*/ Codigo = N_
+
+	IF TYPE("oleAppExcel.Application.Cells(nLin,1).value")=="N"	
+		Replace codigo WITH oleAppExcel.Application.Cells(nLin,1).value
+	Endif	
+
+	*/ Descrição = Empresa
+	IF TYPE("oleAppExcel.Application.Cells(nLin,2).value")=="C"	
+		Replace descricao WITH oleAppExcel.Application.Cells(nLin,2).value
+	Endif	
+	
+	*/ Morada = Morada
+	IF TYPE("oleAppExcel.Application.Cells(nLin,3).value")=="C"	
+		Replace morada WITH oleAppExcel.Application.Cells(nLin,3).value
+	Endif	
+	
+	*/ Morada 2 = Localidade
+	IF TYPE("oleAppExcel.Application.Cells(nLin,4).value")=="C"	
+		Replace morada2 WITH oleAppExcel.Application.Cells(nLin,4).value
+	Endif	
+	
+	*/ CodPostal = C_Postal
+	IF TYPE("oleAppExcel.Application.Cells(nLin,5).value")=="C"	
+		Replace codpostal WITH oleAppExcel.Application.Cells(nLin,5).value
+	Endif	
+	
+	*/ Contribuinte =  Contribuinte
+	IF TYPE("oleAppExcel.Application.Cells(nLin,9).value")=="C"	
+		Replace contribuinte WITH oleAppExcel.Application.Cells(nLin,9).value
+	Endif	
+	
+	*/ Telefone =  Telefone _1_
+	IF TYPE("oleAppExcel.Application.Cells(nLin,10).value")=="C"
+		Replace telefone WITH oleAppExcel.Application.Cells(nLin,10).value
+	ENDIF
+	
+	*/ Telefone2 =  Telefone _2_
+	IF TYPE("oleAppExcel.Application.Cells(nLin,11).value")=="C"
+		Replace telefone2 WITH oleAppExcel.Application.Cells(nLin,11).value
+	ENDIF
+
+	*/ Telefone3 =  Telefone _3_
+	IF TYPE("oleAppExcel.Application.Cells(nLin,12).value")=="C"
+		Replace telefone3 WITH oleAppExcel.Application.Cells(nLin,12).value
+	ENDIF
+	*/ Telefone4 =  Telefone _4_
+	IF TYPE("oleAppExcel.Application.Cells(nLin,13).value")=="C"
+		Replace telefone4 WITH oleAppExcel.Application.Cells(nLin,13).value
+	ENDIF
+
+	*/ Fax =  Fax
+	IF TYPE("oleAppExcel.Application.Cells(nLin,14).value")=="C"
+		Replace fax WITH oleAppExcel.Application.Cells(nLin,14).value
+	ENDIF
+
+	*/ movel =  Telemovel _1_
+	IF TYPE("oleAppExcel.Application.Cells(nLin,15).value")=="C"
+		Replace movel WITH oleAppExcel.Application.Cells(nLin,15).value
+	ENDIF
+
+	*/ movel2 =  Telemovel _2_
+	IF TYPE("oleAppExcel.Application.Cells(nLin,16).value")=="C"
+		Replace movel WITH oleAppExcel.Application.Cells(nLin,16).value
+	ENDIF
+
+	*/Email = Email
+	IF TYPE("oleAppExcel.Application.Cells(nLin,17).value")=="C"
+		Replace email WITH oleAppExcel.Application.Cells(nLin,17).value
+	ENDIF
+
+	*/ Web =  Site
+	IF TYPE("oleAppExcel.Application.Cells(nLin,18).value")=="C"
+		Replace web WITH oleAppExcel.Application.Cells(nLin,18).value
+	ENDIF
+	
+	*/ Prefixo = Pais???
+	cPaisRetail="PORTUGAL"
+    cPrefixo="PT"
+    IF TYPE("oleAppExcel.Application.Cells(nLin,8).value")=="C"
+	    cPaisRetail=oleAppExcel.Application.Cells(nLin,8).value
+    endif
+    Do case 
+	   Case	Upper(cPaisRetail)="PORTUGAL"
+            cPrefixo="PT"
+	   Case Upper(cPaisRetail)="ESPANHA"
+            cPrefixo="ES"			
+	  
+    Endcase	
+
+	*/ Contribuinte = Contribuinte
+	IF TYPE("oleAppExcel.Application.Cells(nLin,9).value")=="C"
+		Replace contribuinte WITH oleAppExcel.Application.Cells(nLin,9).value
+	ENDIF
+	
+	
+		*/ Inativo = Ativo
+	IF TYPE("oleAppExcel.Application.Cells(nLin,52).value")=="C"
+           IF oleAppExcel.Application.Cells(nLin,52).value="VERDADEIRO"
+		Replace inactivo WITH .F.
+           else 
+		Replace inactivo WITH .T.	
+           endif 
+	ENDIF
+	 
+	*/ ------------------------------------------------------------------
+	*/ Se o codigo estiver vazio então chegou ao fim do ficheiro excel
+	*/ Sair do processo de leitura
+	*/ ------------------------------------------------------------------
+	If Codigo=0
+	   EXIT
+	ENDIF
+ENDDO 			
+
+SELECT DadosExcel
+GO TOP 
+IF EOF() 
+	MESSAGEBOX("Sem dados importados",0+48,"Sistema")
+	USE IN DadosExcel	
+	RETURN 
+ENDIF
+
+*/ ------------------------------------------
+*/ Mostrar os dados importados
+*/ ------------------------------------------
+BROWSE 
+*/ ------------------------------------------
+
+IF MESSAGEBOX("Inserir os dados na tabela de clientes?",4+32+256,"Sistema")=7
+	*/ Não
+	USE IN DadosExcel	
+	RETURN 
+ENDIF 
+
+IF USED("CurClientesExcel")
+	USE IN CurClientesExcel
+ENDIF
+USE Clientes IN 0 ALIAS CurClientesExcel ORDER Codigo SHARED AGAIN
+
+SELECT DadosExcel
+GO TOP
+SCAN ALL FOR !EMPTY(Codigo)
+
+	STORE Codigo TO nCodigoCli
+
+	*/ Guardar em variáveis de memória os valores da linha atual da tabela DadosExcel 
+	SCATTER MEMO MEMVAR
+	
+	Wait Windows "A inserir cliente: "+STR(nCodigoCli,5) Nowait
+
+    */ ---------------------------------------
+	*/ Procurar na tabela de artigos o codigo
+	*/ que está no excel
+	*/ ---------------------------------------
+	SELECT CurClientesExcel
+	SEEK STR(nCodigoCli,5)
+	
+	IF !FOUND()
+		*/ Codigo do cliente não existe
+		*/ Vamos criar uma nova linha em branco na tabela de clientes
+		*/ onde se vai inserir os dados
+		APPEND BLANK
+	ELSE
+		*/ Se o cliente já existe, vamos atualizar
+		*/ com os dados existentes no excel
+	ENDIF
+	
+*/ ------------------------------------------------------------------------------------------------------
+*/ Inserir na linha da tabela ss os dados guardados em variaveis de memoria criadas pelo comando SCATTER
+*/ ------------------------------------------------------------------------------------------------------
+	 GATHER MEMVAR MEMO
+
+
+	SELECT DadosExcel
+ENDSCAN 
+
+*/ ----------------------------------------
+*/ Importação terminada
+*/ ----------------------------------------
+USE IN CurClientesExcel
+USE IN DadosExcel
+
+Wait Windows "Terminou"
+
+RETURN 
