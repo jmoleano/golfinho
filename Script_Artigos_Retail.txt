@@ -29,7 +29,7 @@ DO WHILE .T.
 	
     */ Wait Windows "Artigo do Excel: "+Codigo Nowait 
 
-	*/ Descrição do artigo = Produto
+	*/ Descriï¿½ï¿½o do artigo = Produto
 	IF TYPE("oleAppExcel.Application.Cells(nLin,2).value")=="C"	
 		Replace Descricao WITH oleAppExcel.Application.Cells(nLin,2).value
 	ENDIF	
@@ -50,7 +50,7 @@ DO WHILE .T.
             nIva=1
 	   Case	Upper(cIVARetail)="TAXA NORMAL"
             nIva=23
-	   Case Upper(cIVARetail)="TAXA INTERMÉDIA"
+	   Case Upper(cIVARetail)="TAXA INTERMï¿½DIA"
             nIva=13
 	   Case Upper(cIVARetail)="TAXA REDUZIDA"
             nIva=6
@@ -70,7 +70,7 @@ DO WHILE .T.
             nIvac=1
 	   Case	Upper(cIVARetail)="TAXA NORMAL"
             nIvac=23
-	   Case Upper(cIVARetail)="TAXA INTERMÉDIA"
+	   Case Upper(cIVARetail)="TAXA INTERMï¿½DIA"
             nIvac=13
 	   Case Upper(cIVARetail)="TAXA REDUZIDA"
             nIvac=6
@@ -120,7 +120,7 @@ DO WHILE .T.
 	
 	
 	*/ ------------------------------------------------------------------
-	*/ Se o codigo estiver vazio então chegou ao fim do ficheiro excel
+	*/ Se o codigo estiver vazio entï¿½o chegou ao fim do ficheiro excel
 	*/ Sair do processo de leitura
 	*/ ------------------------------------------------------------------
 	If EMPTY(Codigo)
@@ -143,7 +143,7 @@ BROWSE
 */ ------------------------------------------
 
 IF MESSAGEBOX("Inserir os dados na tabela de artigos?",4+32+256,"Sistema")=7
-	*/ Não
+	*/ Nï¿½o
 	USE IN DadosExcel	
 	RETURN 
 ENDIF 
@@ -159,31 +159,30 @@ SCAN ALL FOR !EMPTY(Codigo)
 
 	STORE Codigo TO cCodigoArt
 
-	*/ Guardar em variáveis de memória os valores da linha atual da tabela DadosExcel 
+*/ Guardar em variï¿½veis de memï¿½ria os valores da linha atual da tabela DadosExcel 
 	SCATTER MEMO MEMVAR
 	
 	Wait Windows "A inserir artigo: "+cCodigoArt Nowait
 
-    */ ---------------------------------------
-	*/ Procurar na tabela de artigos o codigo
-	*/ que está no excel
-	*/ ---------------------------------------
+*/ ---------------------------------------------------------
+*/ Procurar na tabela de artigos o codigo que estï¿½ no excel
+*/ ---------------------------------------------------------
 	SELECT CurArtigosExcel
 	SEEK UPPER(cCodigoArt)
 	
 	IF !FOUND()
-		*/ Codigo do artigo não existe
+		*/ Codigo do artigo nï¿½o existe
 		*/ Vamos criar uma nova linha em branco na tabela de artigos
 		*/ onde se vai inserir os dados
 		APPEND BLANK
 	ELSE
-		*/ Se o artigo já existe, vamos atualizar
+		*/ Se o artigo jï¿½ existe, vamos atualizar
 		*/ com os dados existentes no excel
 	ENDIF
 	
-	*/ ------------------------------------------------------------------------------------------------------
-	*/ Inserir na linha da tabela ss os dados guardados em variaveis de memoria criadas pelo comando SCATTER
-	*/ ------------------------------------------------------------------------------------------------------
+*/ ------------------------------------------------------------------------------------------------------
+*/ Inserir na linha da tabela ss os dados guardados em variaveis de memoria criadas pelo comando SCATTER
+*/ ------------------------------------------------------------------------------------------------------
 	GATHER MEMVAR MEMO
 	Replace Tipo with "A"
 	Replace Componente with 1
@@ -196,11 +195,11 @@ SCAN ALL FOR !EMPTY(Codigo)
 ENDSCAN 
 
 */ ----------------------------------------
-*/ Importação terminada
+*/ Importaï¿½ï¿½o terminada
 */ ----------------------------------------
 USE IN CurArtigosExcel
 USE IN DadosExcel
 
 Wait Windows "Terminou"
 
-RETURN 
+RETURN
